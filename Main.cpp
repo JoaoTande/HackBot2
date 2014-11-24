@@ -11,10 +11,10 @@ Aqui é Brasil PORRA!
 //This code is a hack for the game Nidhogg. With this code is possible
 //Construct bots in order to control the avatars in the game.
 //
-//Version 1.0.
+//Version 1.01.
 //
 //In this version you can know the avatar's positions and control the
-//movement of them.
+//movement of them and which avatar is running to win.
 
 
 
@@ -46,7 +46,8 @@ DWORD setPlayerOnePosition(HWND hwnd, DWORD pid, HANDLE phandle, DWORD value);
 DWORD getPlayerOnePosition(HWND hwnd, DWORD pid, HANDLE phandle);
 DWORD setPlayerTwoPosition(HWND hwnd, DWORD pid, HANDLE phandle, DWORD value);
 DWORD getPlayerTwofPosition(HWND hwnd, DWORD pid, HANDLE phandle);
-
+DWORD getAndressRunningCharacter(HWND hwnd, DWORD pid, HANDLE phandle);
+int getRunner(HWND hwnd, DWORD pid, HANDLE phandle);
 
 
 int main()
@@ -73,10 +74,22 @@ int main()
 		}
 		else
 		{
-			thread first(playerOne, hwnd, pid, phandle);//Starts Player One Thread
-			thread second(playerTwo, hwnd, pid, phandle);//Starts Player Two Thread
+			//thread first(playerOne, hwnd, pid, phandle);//Starts Player One Thread
+			//thread second(playerTwo, hwnd, pid, phandle);//Starts Player Two Thread
 			cout << "It is working!" << endl;
-			while (1){}
+			
+			int old = 0;
+			printf("\n\nStarting FIGHT!\n\n");
+			while (1){
+				int who = getRunner(hwnd, pid, phandle);
+				if (old != who){
+					if (who == 0) printf("NOBODY is Running!\n");
+					if (who == 1) printf("Yellow is Running!\n");
+					if (who == 2) printf("Orange is Running!\n");
+					if (who == 3) printf("CODE FAILLLL!\n");
+					old = who;
+				}//fim if
+			}//fim while
 				
 			return 0;
 		}
@@ -160,6 +173,47 @@ void playerTwo(HWND hwnd, DWORD pid, HANDLE phandle){//Control everything about 
 	}
 }
 
+int getRunner(HWND hwnd, DWORD pid, HANDLE phandle){// return 0 nobody is running (starting game), return 1 Yellow is running, return 2 Orange is Running, return 3 == fail.
+	DWORD Runner = getAndressRunningCharacter(hwnd, pid, phandle);
+	if (Runner == 0x00000000) return 0; //return 0 nobody is running (starting game)
+	DWORD Orange = getAndressPositionXOrange(hwnd, pid, phandle);
+	DWORD Yellow = getAndressPositionXYellow(hwnd, pid, phandle);
+	if (Orange == Runner) return 2; //return 2 Orange is Running
+	if (Yellow == Runner) return 1; //return 1 Yellow is running
+
+	return 3; //return 3 == fail
+}
+
+
+DWORD getAndressRunningCharacter(HWND hwnd, DWORD pid, HANDLE phandle){
+	DWORD address;
+	DWORD InicialAndress = 0x002C608C;
+	DWORD value;
+	DWORD baseAndress;
+
+	baseAndress = GetProcessBaseAddress(hwnd, pid);
+	address = InicialAndress + baseAndress;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0x00;
+	if (value == 0x00000000) return 0x00000000;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0x690;
+	if (value == 0x00000000) return 0x00000000;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0xc;
+	if (value == 0x00000000) return 0x00000000;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0xb8;
+	if (value == 0x00000000) return 0x00000000;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0x8;
+	if (value == 0x00000000) return 0x00000000;
+	ReadProcessMemory(phandle, (LPVOID)address, &value, sizeof(value), 0);
+	address = value + 0x50;
+	if (value == 0x00000000) return 0x00000000;
+
+	return address;
+}
 
 DWORD getAndressPositionXOrange(HWND hwnd, DWORD pid, HANDLE phandle){
 	DWORD address;
@@ -328,5 +382,4 @@ oldProtect = 0;
 VirtualProtectEx(handle, targetAddr, 4096, PAGE_EXECUTE_READ, &oldProtect);
 threadId = 0;
 CreateRemoteThread(handle, NULL, 0, targetAddr, NULL, 0, &threadId);*/
-
 
